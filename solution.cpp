@@ -16,11 +16,11 @@ void print_matrix(double** matrix, int rows, int cols) {
     std::cout << "\n";
 }
 
-void matrix_filling(double** matrix, int rows, int cols) {
+int matrix_filling(double** matrix, int rows, int cols) {
     std::ifstream f;
     f.open("file.txt");
     if (f.fail()) {
-        std::cout << "Ошибка открытия файла!" << std::endl;
+        return -1;
     }
     double tmp;
     for (int i = 0; i < rows; i++) {
@@ -29,20 +29,31 @@ void matrix_filling(double** matrix, int rows, int cols) {
         }
     }
     f.close();
+    return 0;
+}
+
+//количество строк в файле (размерность матрицы)
+int file_length(char* path) {
+    std::ifstream file;
+    int rows = 0;
+    std::string line;
+
+    file.open(path);
+    if (file.fail()) {
+        return -1;
+    }
+
+    while (getline(file, line)) {
+        rows++;
+    }
+    file.close();
+
+    return rows;
 }
 
 int main(int arg, char *argv[]) {
 
-    //определение количества строк в файле
-    std::ifstream f;
-    f.open("file.txt");
-    int rows = 0;
-    std::string line;
-    while (getline(f, line)) {
-        rows++;
-    }
-    f.close();
-
+    int rows = file_length(argv[1]);
     int cols = rows;
 
     double** matrix = new double* [rows];
@@ -60,13 +71,13 @@ int main(int arg, char *argv[]) {
         }
     }
 
-    print_matrix(matrix, rows, cols);
-
     double max_el;
     int max_el_row;
     int permutations; //количество перестановок строк
 
     for (int j = 0; j < cols; j++) {
+
+        //поиск максимального по модулю элемента столбца
         max_el = matrix[j][j];
         max_el_row = j;
         for(int i = j; i < rows; i++) {
@@ -76,6 +87,7 @@ int main(int arg, char *argv[]) {
                 permutations++;
             }
         }
+
         //обмен строк местами
         double* swp_address = matrix[max_el_row];
         matrix[max_el_row] = matrix[j]; //j совпадает с номером нужной строки
@@ -114,7 +126,10 @@ int main(int arg, char *argv[]) {
         determinant *= matrix[i][i];
     }
     determinant *= pow(-1, permutations);
-
+    if (determinant == 0) {
+        std::cout << "No solutions" << std::endl;
+        return 0;
+    }
 
     //определение невязок
     double residuals[rows];
@@ -127,15 +142,36 @@ int main(int arg, char *argv[]) {
     }
 
     //печать результатов
+    print_matrix(matrix_copy, rows, cols);
+
+    print_matrix(matrix, rows, cols);
+
     printf("x = [");
     for (int i = 0; i < cols; i++) {
         printf("\t %.2lf", x[i]);
     }
     printf("\t]");
+
     printf("\ndet(A) = %.2lf", determinant);
+
     printf("\nr = [");
     for (int i = 0; i < rows; i++) {
         printf("\t %.20lf", residuals[i]);
     }
     printf("\t]");
+
+    //запись результатов в файл
+    std::fstream f;
+    f.open(argv[2],  std::fstream::out);
+    for (int i = 0; i < rows; i++) {
+        f << x[i] << " ";
+    }
+    f << std::endl;
+
+    for (int i = 0; i < rows; i++) {
+        f << residuals[i] << " ";
+    }
+    f << std::endl;
+    f << determinant;
+    f.close();
 }
