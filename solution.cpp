@@ -1,5 +1,6 @@
 //Решение СЛАУ методом Гаусса с выбором главного элемента
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <stdio.h>
 #include <math.h>
@@ -16,19 +17,33 @@ void print_matrix(double** matrix, int rows, int cols) {
 }
 
 void matrix_filling(double** matrix, int rows, int cols) {
+    std::ifstream f;
+    f.open("file.txt");
+    if (f.fail()) {
+        std::cout << "Ошибка открытия файла!" << std::endl;
+    }
+    double tmp;
     for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols+1; j++) {
-            matrix[i][j] = 100 + rand() % (900 - 100 + 1);
+        for (int j = 0; j <= cols; j++) {
+            f >> matrix[i][j];
         }
     }
+    f.close();
 }
 
 int main(int arg, char *argv[]) {
-    int cols;
-    std::cout << "N> ";
-    std::cin >> cols;
 
-    int rows = cols;
+    //определение количества строк в файле
+    std::ifstream f;
+    f.open("file.txt");
+    int rows = 0;
+    std::string line;
+    while (getline(f, line)) {
+        rows++;
+    }
+    f.close();
+
+    int cols = rows;
 
     double** matrix = new double* [rows];
     for (int i = 0; i < rows; i++) {
@@ -36,6 +51,14 @@ int main(int arg, char *argv[]) {
     }
 
     matrix_filling(matrix, rows, cols);
+
+    double** matrix_copy = new double* [rows];
+    for (int i = 0; i < rows; i++) {
+        matrix_copy[i] = new double[cols+1];
+        for (int j = 0; j < cols+1; j++) {
+            matrix_copy[i][j] = matrix[i][j];
+        }
+    }
 
     print_matrix(matrix, rows, cols);
 
@@ -61,7 +84,7 @@ int main(int arg, char *argv[]) {
         //прямой ход (нули ниже главной диагонали)
         for (int k = 1 + j; k < rows; k++) {
             double c = matrix[k][j]/matrix[j][j];
-            for (int m = 0; m <= rows; m++) {
+            for (int m = 0; m <= cols; m++) {
                 if (fabs(c) == 0) {
                     break;
                 }
@@ -70,7 +93,6 @@ int main(int arg, char *argv[]) {
                 matrix[k][m] = t;
             }
         }
-        print_matrix(matrix, rows, cols);
     }
 
     double x[cols+1];
@@ -86,11 +108,23 @@ int main(int arg, char *argv[]) {
         }
     }
 
+    //определитель
     double determinant = 1.0;
     for (int i = 0; i < rows; i++) {
         determinant *= matrix[i][i];
     }
     determinant *= pow(-1, permutations);
+
+
+    //определение невязок
+    double residuals[rows];
+    for (int i = 0; i < rows; i++) {
+        double sum = 0;
+        for (int j = 0; j < cols; j++) {
+           sum += matrix_copy[i][j] * x[j];
+        }
+        residuals[i] = matrix_copy[i][cols] - sum;
+    }
 
     //печать результатов
     printf("x = [");
@@ -99,4 +133,9 @@ int main(int arg, char *argv[]) {
     }
     printf("\t]");
     printf("\ndet(A) = %.2lf", determinant);
+    printf("\nr = [");
+    for (int i = 0; i < rows; i++) {
+        printf("\t %.20lf", residuals[i]);
+    }
+    printf("\t]");
 }
