@@ -51,6 +51,54 @@ int file_length(char* path) {
     return rows;
 }
 
+double** inverse_matrix(double** matrix, int rows, int cols) {
+
+    double** matrix_inverse = new double* [rows];
+
+    //генерация единичной матрицы
+    for (int i = 0; i < rows; i++) {
+        matrix_inverse[i] = new double[cols];
+        for (int j = 0; j < cols; j++) {
+            if (i == j) {
+                matrix_inverse[i][j] = 1;
+            } else {
+                matrix_inverse[i][j] = 0;
+            }
+        }
+    }
+    
+    double cft;
+    for(int t = 0; t < rows; t++) {
+        cft = matrix[t][t];
+        //деление текущей строки на диагональный элемент
+        for (int j = 0; j < cols; j++) {
+            matrix[t][j] /= cft;
+            matrix_inverse[t][j] /= cft;
+        }
+
+        //вычитание из следующей строки предудующей с домножением
+        for (int i = t + 1; i < rows; i++) {
+            cft = matrix[i][t]; //первый элемент текущей строки
+            for (int j = 0; j < cols; j++) {
+                matrix[i][j] -= matrix[t][j] * cft;
+                matrix_inverse[i][j] -= matrix_inverse[t][j] * cft;
+            }
+        }
+    }
+
+    for (int t = rows - 1; t > 0; t--) {
+        for (int i = t - 1; i >= 0; i--) {
+            cft = matrix[i][t]; //последний элемент текущей строки
+            for (int j = 0; j < cols; j++) {
+                matrix[i][j] -= matrix[t][j] * cft;
+                matrix_inverse[i][j] -= matrix_inverse[t][j] * cft;
+            }
+        }
+    }
+
+    return matrix_inverse;
+}
+
 int main(int arg, char *argv[]) {
 
     int rows = file_length(argv[1]);
@@ -64,10 +112,13 @@ int main(int arg, char *argv[]) {
     matrix_filling(matrix, rows, cols);
 
     double** matrix_copy = new double* [rows];
+    double** matrix_copy_2 = new double* [rows];
     for (int i = 0; i < rows; i++) {
         matrix_copy[i] = new double[cols+1];
+        matrix_copy_2[i] = new double[cols+1];
         for (int j = 0; j < cols+1; j++) {
             matrix_copy[i][j] = matrix[i][j];
+            matrix_copy_2[i][j] = matrix[i][j];
         }
     }
 
@@ -131,6 +182,8 @@ int main(int arg, char *argv[]) {
         return 0;
     }
 
+    double** matrix_inverse = inverse_matrix(matrix_copy_2, rows, cols);
+
     //определение невязок
     double residuals[rows];
     for (int i = 0; i < rows; i++) {
@@ -143,8 +196,15 @@ int main(int arg, char *argv[]) {
 
     //печать результатов
     print_matrix(matrix_copy, rows, cols);
-
     print_matrix(matrix, rows, cols);
+
+    //вывод обратной матрицы
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            printf("\t%.2lf", matrix_inverse[i][j]);
+        }
+        printf("\n");
+    }
 
     printf("x = [");
     for (int i = 0; i < cols; i++) {
