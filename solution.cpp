@@ -16,9 +16,10 @@ void print_matrix(double** matrix, int rows, int cols) {
     std::cout << "\n";
 }
 
-int matrix_filling(double** matrix, int rows, int cols) {
+//чтение матрицы из файла
+int matrix_filling(double** matrix, int rows, int cols, char* path) {
     std::ifstream f;
-    f.open("file.txt");
+    f.open(path);
     if (f.fail()) {
         return -1;
     }
@@ -50,6 +51,23 @@ int file_length(char* path) {
 
     return rows;
 }
+
+//вычисление невязок
+double* residual(double** original_matrix, double* x, int rows, int cols) {
+    double* residuals = new double[rows];
+    double sum;
+
+    for (int i = 0; i < rows; i++) {
+        sum = 0;
+        for (int j = 0; j < cols; j++) {
+           sum += original_matrix[i][j] * x[j];
+        }
+        residuals[i] = original_matrix[i][cols] - sum;
+    }
+
+    return residuals;
+}
+
 
 double** inverse_matrix(double** matrix, int rows, int cols) {
 
@@ -109,7 +127,7 @@ int main(int arg, char *argv[]) {
         matrix[i] = new double[cols+1]; //+1 т.к. вектро b хранится в отдельном столбце
     }
 
-    matrix_filling(matrix, rows, cols);
+    matrix_filling(matrix, rows, cols, argv[1]);
 
     double** matrix_copy = new double* [rows];
     double** matrix_copy_2 = new double* [rows];
@@ -146,6 +164,11 @@ int main(int arg, char *argv[]) {
 
         //прямой ход (нули ниже главной диагонали)
         for (int k = 1 + j; k < rows; k++) {
+            if (matrix[j][j] == 0) {
+                std::cout << "No solutions" << std::endl;
+                return 0;
+            }
+
             double c = matrix[k][j]/matrix[j][j];
             for (int m = 0; m <= cols; m++) {
                 if (fabs(c) == 0) {
@@ -155,19 +178,6 @@ int main(int arg, char *argv[]) {
                 double t = matrix[k][m] - c2;
                 matrix[k][m] = t;
             }
-        }
-    }
-
-    double x[cols+1];
-    //обратный ход
-    for (int i = rows-1; i >= 0; i--) {
-        double sum = 0;
-        for (int j = cols-1; j > i; j--) {
-            sum += x[j]*matrix[i][j];
-        }
-        x[i] = (matrix[i][cols] - sum)/matrix[i][i];
-        if (x[i] == 0) {
-            x[i] = fabs(x[i]);
         }
     }
 
@@ -182,17 +192,21 @@ int main(int arg, char *argv[]) {
         return 0;
     }
 
-    double** matrix_inverse = inverse_matrix(matrix_copy_2, rows, cols);
-
-    //определение невязок
-    double residuals[rows];
-    for (int i = 0; i < rows; i++) {
+    double* x = new double[cols+1];
+    //обратный ход
+    for (int i = rows-1; i >= 0; i--) {
         double sum = 0;
-        for (int j = 0; j < cols; j++) {
-           sum += matrix_copy[i][j] * x[j];
+        for (int j = cols-1; j > i; j--) {
+            sum += x[j]*matrix[i][j];
         }
-        residuals[i] = matrix_copy[i][cols] - sum;
+        x[i] = (matrix[i][cols] - sum)/matrix[i][i];
+        if (x[i] == 0) {
+            x[i] = fabs(x[i]);
+        }
     }
+
+    double** matrix_inverse = inverse_matrix(matrix_copy_2, rows, cols);
+    double* residuals = residual(matrix_copy, x, rows, cols); //невязки
 
     //печать результатов
     print_matrix(matrix_copy, rows, cols);
@@ -208,7 +222,7 @@ int main(int arg, char *argv[]) {
 
     printf("x = [");
     for (int i = 0; i < cols; i++) {
-        printf("\t %.2lf", x[i]);
+        printf("\t %.3lf", x[i]);
     }
     printf("\t]");
 
@@ -223,15 +237,27 @@ int main(int arg, char *argv[]) {
     //запись результатов в файл
     std::fstream f;
     f.open(argv[2],  std::fstream::out);
+    f << "x = ";
     for (int i = 0; i < rows; i++) {
         f << x[i] << " ";
     }
     f << std::endl;
 
+    f << "r = ";
     for (int i = 0; i < rows; i++) {
         f << residuals[i] << " ";
     }
     f << std::endl;
-    f << determinant;
+
+    f << "d = " << determinant;
+    f <<std::endl;
+
+    f << "inverse: " << std::endl;
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            f << "\t" << matrix_inverse[i][j];
+        }
+        f << std::endl;
+    }
     f.close();
 }
