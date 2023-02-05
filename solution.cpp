@@ -23,7 +23,7 @@ int matrix_filling(double** matrix, int rows, int cols, char* path) {
     if (f.fail()) {
         return -1;
     }
-    double tmp;
+
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j <= cols; j++) {
             f >> matrix[i][j];
@@ -70,7 +70,6 @@ double* residual(double** original_matrix, double* x, int rows, int cols) {
 
 
 double** inverse_matrix(double** matrix, int rows, int cols) {
-
     double** matrix_inverse = new double* [rows];
 
     //генерация единичной матрицы
@@ -142,7 +141,7 @@ int main(int arg, char *argv[]) {
 
     double max_el;
     int max_el_row;
-    int permutations; //количество перестановок строк
+    int permutations = 0; //количество перестановок строк
 
     for (int j = 0; j < cols; j++) {
 
@@ -209,10 +208,12 @@ int main(int arg, char *argv[]) {
     double* residuals = residual(matrix_copy, x, rows, cols); //невязки
 
     //печать результатов
+    std::cout << "Original matrix: " << std::endl;
     print_matrix(matrix_copy, rows, cols);
-    print_matrix(matrix, rows, cols);
+    //print_matrix(matrix, rows, cols);
 
     //вывод обратной матрицы
+    std::cout << "Inverse matrix: " << std::endl;
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             printf("\t%.2lf", matrix_inverse[i][j]);
@@ -239,7 +240,7 @@ int main(int arg, char *argv[]) {
     f.open(argv[2],  std::fstream::out);
     f << "x = ";
     for (int i = 0; i < rows; i++) {
-        f << x[i] << " ";
+        f << floor(x[i]*100)/100 << " ";
     }
     f << std::endl;
 
@@ -249,13 +250,13 @@ int main(int arg, char *argv[]) {
     }
     f << std::endl;
 
-    f << "d = " << determinant;
+    f << "d = " << floor(determinant*100)/100;
     f <<std::endl;
 
     f << "inverse: " << std::endl;
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            f << "\t" << matrix_inverse[i][j];
+            f << "\t" << floor(matrix_inverse[i][j]*100)/100;
         }
         f << std::endl;
     }
